@@ -1,6 +1,6 @@
-# Instant Meshes (Apple Silicon Port)
+# Instant Meshes (Apple Silicon Port - 2026)
 
-This repository is a maintenance port of the original **Instant Meshes** software, optimized for **Apple Silicon (M1/M2/M3)** Macs and updated for compatibility with the latest version of macOS, CMake, and modern compilers.
+This repository is a maintenance port of the original **Instant Meshes** software, optimized for **Apple Silicon (M1/M2/M3)** Macs. It has been updated in **2026** for compatibility with the latest version of macOS, **CMake 4.2**, and modern compilers.
 
 ## Overview
 
@@ -10,6 +10,14 @@ This version addresses specific issues encountered on modern hardware:
 - Fixes GLSL shader compilation errors (null-termination issues in resource generation).
 - Updates the build system (`CMakeLists.txt`) for Apple Silicon compatibility.
 - Streamlines the resource handling for modern environments.
+
+## Why this Port was Non-Trivial
+
+Porting this legacy codebase to modern Apple Silicon hardware involved solving several deep-seated technical issues:
+
+1.  **GLSL Buffer Overflows:** The original resource generation system (`bin2c.cmake`) did not null-terminate shader source strings. On modern Apple Silicon drivers, this caused the GLSL compiler to read past the intended buffer into adjacent memory (often hitting binary resources or XML plists), resulting in cryptic syntax errors like `ERROR: 0:164: '<'`.
+2.  **Resource Pipeline Refactoring:** Solving this required a precise modification of the internal resource pipeline to ensure shader files are null-terminated while binary files (like PNGs) remain untouched, all while maintaining the integrity of the `ext/nanogui` submodules.
+3.  **Refactoring with AI:** The extensive refactoring of the shader initialization system in `src/viewer.cpp` to use size-aware `std::string` constructors was performed using **Gemini 3.1**, ensuring a robust and modernized implementation.
 
 ## Credits & Original Work
 
