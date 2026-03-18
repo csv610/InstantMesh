@@ -54,69 +54,72 @@ The compiled binary supports a powerful batch mode for automated processing.
 
 ## Calling from Python
 
-The most robust way to use Instant Meshes in a Python workflow is via the `subprocess` module. Below is a comprehensive wrapper supporting all common CLI flags:
+The most robust way to use Instant Meshes in a Python workflow is via the `subprocess` module. Using a `dataclass` is recommended for clean parameter management.
 
 ```python
 import subprocess
-import os
+from dataclasses import dataclass, asdict
+from typing import Optional
 
-def instant_meshes_remesh(
-    input_mesh, 
-    output_mesh, 
-    faces=None,      # -f, --faces <count>
-    vertices=None,   # -v, --vertices <count>
-    scale=None,      # -s, --scale <scale>
-    rosy=4,          # -r, --rosy <2|4|6>
-    posy=4,          # -p, --posy <4|6>
-    crease=None,     # -c, --crease <degrees>
-    smooth=2,        # -S, --smooth <iter>
-    knn=10,          # -k, --knn <count>
-    threads=None,    # -t, --threads <count>
-    deterministic=False, # -d, --deterministic
-    intrinsic=False,     # -i, --intrinsic
-    boundaries=False,    # -b, --boundaries
-    dominant=False       # -D, --dominant
-):
-    """
-    Comprehensive Python wrapper for Instant Meshes CLI.
-    Note: Provide exactly one of [faces, vertices, scale].
-    """
+@dataclass
+class RemeshOptions:
+    faces: Optional[int] = None      # Target face count
+    vertices: Optional[int] = None   # Target vertex count
+    scale: Optional[float] = None    # Target edge length
+    rosy: int = 4                    # Rotation symmetry (2, 4, 6)
+    posy: int = 4                    # Position symmetry (4, 6)
+    crease: Optional[float] = None   # Crease angle threshold
+    smooth: int = 2                  # Smoothing iterations
+    knn: int = 10                    # kNN for point clouds
+    threads: Optional[int] = None    # Thread count
+    deterministic: bool = False      # Deterministic algorithms
+    intrinsic: bool = False          # Intrinsic optimization
+    boundaries: bool = False         # Align to boundaries
+    dominant: bool = False           # Tri/Quad dominant output
+
+def instant_meshes_remesh(input_mesh: str, output_mesh: str, options: RemeshOptions):
     cmd = ["./Instant Meshes", "-o", output_mesh]
 
-    # Target size constraints (exclusive)
-    if faces: cmd += ["-f", str(faces)]
-    elif vertices: cmd += ["-v", str(vertices)]
-    elif scale: cmd += ["-s", str(scale)]
+    if options.faces: cmd += ["-f", str(options.faces)]
+    elif options.vertices: cmd += ["-v", str(options.vertices)]
+    elif options.scale: cmd += ["-s", str(options.scale)]
 
-    # Symmetry and optimization
-    cmd += ["-r", str(rosy), "-p", str(posy)]
-    if crease is not None: cmd += ["-c", str(crease)]
-    if smooth != 2: cmd += ["-S", str(smooth)]
-    if knn != 10: cmd += ["-k", str(knn)]
-    if threads: cmd += ["-t", str(threads)]
+    cmd += ["-r", str(options.rosy), "-p", str(options.posy)]
+    if options.crease is not None: cmd += ["-c", str(options.crease)]
+    if options.smooth != 2: cmd += ["-S", str(options.smooth)]
+    if options.knn != 10: cmd += ["-k", str(options.knn)]
+    if options.threads: cmd += ["-t", str(options.threads)]
 
-    # Boolean flags
-    if deterministic: cmd.append("-d")
-    if intrinsic: cmd.append("-i")
-    if boundaries: cmd.append("-b")
-    if dominant: cmd.append("-D")
+    if options.deterministic: cmd.append("-d")
+    if options.intrinsic: cmd.append("-i")
+    if options.boundaries: cmd.append("-b")
+    if options.dominant: cmd.append("-D")
 
-    # Input file
     cmd.append(input_mesh)
-
-    print(f"Running: {' '.join(cmd)}")
     subprocess.run(cmd, check=True)
 
-# Example Usage:
-# Generate a tri-quad dominant mesh with 5000 faces and sharp crease handling
-instant_meshes_remesh(
-    "input.obj", "output.obj", 
-    faces=5000, 
-    crease=45, 
-    dominant=True,
-    boundaries=True
-)
+# Usage
+opts = RemeshOptions(faces=5000, dominant=True, boundaries=True)
+instant_meshes_remesh("input.obj", "output.obj", opts)
 ```
+
+### Detailed Options Explanation:
+
+| Option | CLI Flag | Description |
+| :--- | :--- | :--- |
+| **Faces** | `-f`, `--faces` | The approximate number of faces in the generated mesh. |
+| **Vertices** | `-v`, `--vertices` | The approximate number of vertices in the generated mesh. |
+| **Scale** | `-s`, `--scale` | The desired world-space length of edges in the output. |
+| **RoSy** | `-r`, `--rosy` | **Rotation Symmetry**: 2 for line-aligned, 4 for quads (default), 6 for triangles. |
+| **PoSy** | `-p`, `--posy` | **Position Symmetry**: 4 for quads/tri-dominant (default), 6 for triangles. |
+| **Crease** | `-c`, `--crease` | Dihedral angle threshold (in degrees) to identify and preserve sharp features. |
+| **Smooth** | `-S`, `--smooth` | Number of post-extraction smoothing and reprojection steps (default: 2). |
+| **kNN** | `-k`, `--knn` | For point cloud inputs, the number of adjacent points to consider for surface estimation. |
+| **Threads** | `-t`, `--threads` | Limits the number of CPU threads used for parallel computation. |
+| **Deterministic** | `-d` | Ensures bit-for-bit identical results on every run at a slight performance cost. |
+| **Intrinsic** | `-i` | Performs optimization in tangent space rather than 3D world space. |
+| **Boundaries** | `-b` | Forces the field to align with the open boundaries of the input mesh. |
+| **Dominant** | `-D` | Produces a tri/quad dominant mesh instead of forcing a pure tri or quad structure. |
 
 ## License
 
