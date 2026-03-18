@@ -1,4 +1,7 @@
-# Instant Meshes
+# Instant Meshes (Apple Silicon Port)
+
+This is a port of the original **Instant Meshes** software to **Apple Silicon (Mac M1/M2/M3)**, updated to work with the latest software and CMake.
+
 [![Build Status](https://travis-ci.org/wjakob/instant-meshes.svg?branch=master)](https://travis-ci.org/wjakob/instant-meshes)
 [![Build status](https://ci.appveyor.com/api/projects/status/dm4kqxhin5uxiey0/branch/master?svg=true)](https://ci.appveyor.com/project/wjakob/instant-meshes/branch/master)
 
